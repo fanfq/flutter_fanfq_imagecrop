@@ -1,4 +1,9 @@
+import 'dart:typed_data';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+
+import 'flutter_fanfq_imagecrop/head_image_cropper.dart';
 
 void main() {
   runApp(const MyApp());
@@ -53,8 +58,48 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return widget2();
+
+    var _controller = CropperController();
+
+
+    return Scaffold(
+      appBar: AppBar(
+        actions: <Widget>[
+          TextButton(
+            child: const Text("保存"),
+            onPressed: () {
+              _controller.outImage()?.then((image) async {
+                //保存或上传代码
+                var bytes =
+                (await (image.toByteData(format: ImageByteFormat.png)))!
+                    .buffer
+                    .asUint8List();
+
+                Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (context) {
+                  return ShowImage(
+                    data: bytes,
+                  );
+                }));
+//                  File("path").writeAsBytesSync(bytes);
+              });
+            },
+          )
+        ],
+      ),
+      body: Container(
+        padding: EdgeInsets.all(0),
+        child: CropperImage(
+          AssetImage("images/actor.jpg"),
+          controller: _controller,
+          round: 0,
+          limitations: false,
+        ),
+      ),
+    );
   }
+
+
 
 
   //https://juejin.cn/post/6859185139402932238#heading-6
@@ -75,7 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
             panEnabled: true,
 
             ///子控件可以移动的范围,边界边矩,是可移动的限定边距。默认是EdgeInsets.zero，即被定死，不能移动
-            boundaryMargin:EdgeInsets.all(400),
+            boundaryMargin:EdgeInsets.all(0),
 
             ///是否开启缩放
             scaleEnabled: true,
@@ -220,6 +265,26 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ]),
       ),
+    );
+  }
+}
+class ShowImage extends StatefulWidget {
+  final Uint8List data;
+
+  const ShowImage({Key? key, required this.data}) : super(key: key);
+
+  @override
+  _ShowImageState createState() => _ShowImageState();
+}
+
+class _ShowImageState extends State<ShowImage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("裁剪效果"),
+      ),
+      body: Image.memory(widget.data),
     );
   }
 }
