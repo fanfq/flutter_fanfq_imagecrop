@@ -1,6 +1,7 @@
 
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:math';
 import 'dart:ui';
 import 'dart:ui' as ui show Image;
 import 'cropper_image_out.dart' if (dart.library.html) 'cropper_image_web_out.dart' as imgOut;
@@ -328,6 +329,8 @@ class CropperImageRender extends RenderProxyBox {
       this.drawX += ((_new1!.dx! - _old1!.dx!) + (_new2!.dx! - _old2!.dx!)) / 2;
       this.drawY += ((_new1!.dy! - _old1!.dy!) + (_new2!.dy! - _old2!.dy!)) / 2;
 
+
+      ///无限制 - 旋转
       if (!limitations) {
         var k1 = (_old1!.dx! - _old2!.dx!) / (_old1!.dy! - _old2!.dy!);
         var k2 = (_new1!.dx! - _new2!.dx!) / (_new1!.dy! - _new2!.dy!);
@@ -337,6 +340,8 @@ class CropperImageRender extends RenderProxyBox {
           this.rotate1 -= temp;
         }
       }
+
+
       markNeedsPaint();
     } else if ((null != _old1 && null != _new1) || (null != _old2 && null != _new2)) {
       this.drawX += ((_new1 ?? _new2)!.dx! - (_old1 ?? _old2)!.dx!);
@@ -385,18 +390,22 @@ class CropperImageRender extends RenderProxyBox {
     canvas.save();
     canvas.translate(offset.dx, offset.dy);
     canvas.clipRect(Rect.fromLTWH(0, 0, size.width, size.height));
-//    canvas.drawColor(Colors.blue, BlendMode.color);
+   //canvas.drawColor(Colors.blue, BlendMode.color);
     _onPadding(size);
     _createBack(canvas, size);
     if (null != _image) {
-      _onPosition();
+      _onPosition();///定位
       canvas.save();
-      canvas.translate(centerX! + drawX, centerY! + drawY);
-      canvas.rotate(rotate1);
-      canvas.scale(scale);
+      canvas.translate(centerX! + drawX, centerY! + drawY);///移动
+      canvas.rotate(rotate1);///旋转弧度
+      canvas.scale(scale);///缩放
       canvas.drawImage(_image!, Offset(-_image!.width / 2, -_image!.height / 2), Paint());
       canvas.restore();
     }
+
+
+    //canvas.clipRect(Rect.fromLTWH(-_image!.width / 2, -_image!.height / 2, _image!.width*1.0, _image!.height*1.0));
+    //canvas.clipRect(Rect.fromLTWH(40, 40, 140, 140),clipOp:ClipOp.difference);
 
     _craeteMask(canvas, size);
     canvas.restore();
@@ -496,6 +505,7 @@ class CropperImageRender extends RenderProxyBox {
 
   _onPosition() {
     if (limitations) {
+      ///有限制
       if (5 < scale) {
         scale = 5;
       }
@@ -524,6 +534,95 @@ class CropperImageRender extends RenderProxyBox {
       if (bottom! > centerY! + drawY + height) {
         drawY = bottom! - centerY! - height;
       }
+    }else{
+      // if(rotate1 != 0 && limitations == false)
+      ///无限制,且角度无旋转
+
+      if(rotate1 == 0){
+
+        if (5 < scale) {
+          scale = 5;
+        }
+
+
+        var fw = (right! - left!) / _image!.width;
+        var fh = (bottom! - top!) / _image!.height;
+        if (fw < fh) {
+          fw = fh;
+        }
+        if (scale < fw) {
+          scale = fw;
+        }
+
+        var width = _image!.width * scale / 2;
+        if (left! < centerX! + drawX - width) {
+          drawX = left! - centerX! + width;
+        }
+        if (right! > centerX! + drawX + width) {
+          drawX = right! - centerX! - width;
+        }
+
+        var height = _image!.height * scale / 2;
+        if (top! < centerY! + drawY - height) {
+          drawY = top! - centerY! + height;
+        }
+        if (bottom! > centerY! + drawY + height) {
+          drawY = bottom! - centerY! - height;
+        }
+
+      }else{
+        ///无限制,且角度有旋转
+
+
+
+
+        //两点的距离
+        var distance = sqrt(pow(right! - left!, 2) + pow(bottom! - top!, 2));
+        var w_ = _image!.width < _image!.height ? _image!.width : _image!.height;
+        var s_ = distance / w_;
+
+        //最小倍数
+        if(scale < s_) {
+          scale = s_;
+        }
+
+        //最大倍数
+        if (5 < scale) {
+          scale = 5;
+        }
+
+        //左上角交集
+        ///left!, top!, right!, bottom!
+        ///
+        Offset l1 = Offset(left!,top!);
+        Offset l2 = Offset(left!,bottom!);
+        Offset r1 = Offset(right!,top!);
+        Offset r2 = Offset(right!,bottom!);
+
+        //判断点是否在图片上
+        //todo 需要优化 2022-06-06
+
+        var width = _image!.width * scale / 2;
+        if (left! < centerX! + drawX - width) {
+          drawX = left! - centerX! + width;
+        }
+        if (right! > centerX! + drawX + width) {
+          drawX = right! - centerX! - width;
+        }
+
+        var height = _image!.height * scale / 2;
+        if (top! < centerY! + drawY - height) {
+          drawY = top! - centerY! + height;
+        }
+        if (bottom! > centerY! + drawY + height) {
+          drawY = bottom! - centerY! - height;
+        }
+
+      }
+
+
+      //print("drawX:$drawX,drawY:$drawY,scale:$scale");
+      print("x:${centerX!+drawX},y:${centerY!+drawY},scale:$scale,rotate1:$rotate1");
     }
   }
 

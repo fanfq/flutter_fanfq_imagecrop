@@ -64,11 +64,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return Scaffold(
       appBar: AppBar(
+        title: Text(widget.title),
         actions: <Widget>[
-          TextButton(
-            child: const Text("保存"),
+          IconButton(
+            icon: Icon(Icons.crop),
             onPressed: () {
-              _controller.outImage()?.then((image) async {
+              _controller.outImage().then((image) async {
                 //保存或上传代码
                 var bytes =
                 (await (image.toByteData(format: ImageByteFormat.png)))!
