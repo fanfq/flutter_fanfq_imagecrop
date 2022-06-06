@@ -578,6 +578,7 @@ class CropperImageRender extends RenderProxyBox {
 
         //两点的距离
         var distance = sqrt(pow(right! - left!, 2) + pow(bottom! - top!, 2));
+        //var distance = cos(rotate1.abs() * 180 / (pi)) * (right! - left!);
         var w_ = _image!.width < _image!.height ? _image!.width : _image!.height;
         var s_ = distance / w_;
 
@@ -590,6 +591,11 @@ class CropperImageRender extends RenderProxyBox {
         if (5 < scale) {
           scale = 5;
         }
+
+        //计算斜边的长度
+
+
+
 
         //左上角交集
         ///left!, top!, right!, bottom!
