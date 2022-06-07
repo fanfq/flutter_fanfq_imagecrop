@@ -2,8 +2,8 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:math';
-import 'dart:ui';
-import 'dart:ui' as ui show Image;
+import 'dart:ui' as ui;// show Image;
+
 import 'cropper_image_out.dart' if (dart.library.html) 'cropper_image_web_out.dart' as imgOut;
 
 import 'package:flutter/gestures.dart';
@@ -389,23 +389,113 @@ class CropperImageRender extends RenderProxyBox {
     var canvas = context.canvas;
     canvas.save();
     canvas.translate(offset.dx, offset.dy);
-    canvas.clipRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    //canvas.clipRect(Rect.fromLTWH(0, 0, size.width, size.height));
    //canvas.drawColor(Colors.blue, BlendMode.color);
     _onPadding(size);
     _createBack(canvas, size);
     if (null != _image) {
+
+      //////////////////////////////////////////////////////////////////////////////////////////////
+      //  判断是否有交集
+
+      var frameRect = Rect.fromLTRB(left!, top!, right!, bottom!);
+      canvas.drawRect(frameRect,
+          Paint()
+            ..color = Colors.redAccent
+            ..strokeWidth = 2
+            ..style = PaintingStyle.fill);
+      //canvas.clipRect(Rect.fromLTWH(left!, top!, right!, bottom!));
+      //////////////////////////////////////////////////////////////////////////////////////////////
+
       _onPosition();///定位
       canvas.save();
       canvas.translate(centerX! + drawX, centerY! + drawY);///移动
       canvas.rotate(rotate1);///旋转弧度
       canvas.scale(scale);///缩放
-      canvas.drawImage(_image!, Offset(-_image!.width / 2, -_image!.height / 2), Paint());
+      canvas.drawImage(_image!, Offset(-_image!.width / 2, -_image!.height / 2), Paint());///绘制图片
+      ///
+      ///
+
+      //////////////////////////////////////////////////////////////////////////////////////////////
+      //辅助线
+
+      //图片左上角
+      var leftTop = Offset(-_image!.width / 2, -_image!.height / 2);
+      canvas.drawCircle(leftTop, 5, Paint()..color = Colors.red);
+      //图片左下角
+      var leftBottom = Offset(-_image!.width / 2, _image!.height / 2);
+      canvas.drawCircle(leftBottom, 5, Paint()..color = Colors.red);
+      //图片右上角
+      var rightTop = Offset(_image!.width / 2, -_image!.height / 2);
+      canvas.drawCircle(rightTop, 5, Paint()..color = Colors.red);
+      //图片右下角
+      var rightBottom = Offset(_image!.width / 2, _image!.height / 2);
+      canvas.drawCircle(rightBottom, 5, Paint()..color = Colors.red);
+
+      //图片对角线
+      canvas.drawLine(leftTop, rightBottom, Paint()..color = Colors.yellow..strokeWidth = 2);
+      canvas.drawLine(leftBottom, rightTop, Paint()..color = Colors.yellow..strokeWidth = 2);
+      //图片边框
+      canvas.drawLine(leftTop, rightTop, Paint()..color = Colors.yellow..strokeWidth = 2);
+      canvas.drawLine(leftTop, leftBottom, Paint()..color = Colors.yellow..strokeWidth = 2);
+      canvas.drawLine(rightTop, rightBottom, Paint()..color = Colors.yellow..strokeWidth = 2);
+      canvas.drawLine(rightBottom, leftBottom, Paint()..color = Colors.yellow..strokeWidth = 2);
+
+      //图片中心点
+      var center = Offset(0,0);
+      canvas.drawCircle(center, 5, Paint()..color = Colors.red);
+
+      //角度&缩放
+      final paragraphStyle = ui.ParagraphStyle(
+          textAlign: TextAlign.left,
+          fontSize: 20,
+          fontWeight: FontWeight.normal);
+      final paragraphBuilder = ui.ParagraphBuilder(paragraphStyle)
+        ..pushStyle(ui.TextStyle(color:Colors.redAccent))
+        ..addText('弧度:${rotate1.toStringAsFixed(2)}')//弧度
+        ..addText('\n角度:${ (rotate1 * 180 / (pi)).toStringAsFixed(2) }')//角度
+        ..addText('\n缩放:${scale.toStringAsFixed(2)}')//缩放
+        ..addText('\n偏移:${drawX.toStringAsFixed(2)},${drawY.toStringAsFixed(2)}')//偏移
+        ..addText('\nsize:${size.width.toStringAsFixed(2)},${size.height.toStringAsFixed(2)}');
+      var paragraph = paragraphBuilder.build();
+      paragraph.layout(ui.ParagraphConstraints(width: image!.width/2));
+      canvas.drawRect(
+          Rect.fromLTRB(0, 0, paragraph.width,  paragraph.height),
+          Paint()..color=Colors.white);
+      canvas.drawParagraph(paragraph, Offset(0, 0));
+
+      //
+      canvas.drawCircle(Offset(drawX, drawY), 5, Paint()..color = Colors.blue);
+      canvas.drawCircle(Offset(centerX! + drawX, centerY! + drawY), 5, Paint()..color = Colors.yellow);
+
+
+
+
+      //////////////////////////////////////////////////////////////////////////////////////////////
+      //判断是否交集
+      canvas.drawRect(Rect.fromLTRB(-_image!.width / 2, -_image!.height / 2, _image!.width/2, _image!.height/2),
+          Paint()
+            ..color = Colors.yellowAccent
+            ..strokeWidth = 2
+            ..style = PaintingStyle.stroke);
+      //canvas.clipRect(Rect.fromLTWH(-_image!.width / 2, -_image!.height / 2, _image!.width/2, _image!.height/2),clipOp:ui.ClipOp.intersect);
+      canvas.clipRect(frameRect,clipOp:ui.ClipOp.intersect);
+      //////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+      ///
+      ///
       canvas.restore();
     }
 
 
-    //canvas.clipRect(Rect.fromLTWH(-_image!.width / 2, -_image!.height / 2, _image!.width*1.0, _image!.height*1.0));
-    //canvas.clipRect(Rect.fromLTWH(40, 40, 140, 140),clipOp:ClipOp.difference);
+    // canvas.drawRect(Rect.fromLTRB(left!, top!, right!, bottom!),
+    //     Paint()
+    //       ..color = Colors.redAccent
+    //       ..strokeWidth = 2
+    //       ..style = PaintingStyle.fill);
+    //canvas.clipRect(Rect.fromLTWH(left!, top!, right!, bottom!),clipOp:ui.ClipOp.intersect);
 
     _craeteMask(canvas, size);
     canvas.restore();
@@ -448,7 +538,7 @@ class CropperImageRender extends RenderProxyBox {
             ..style = PaintingStyle.stroke);
     } else {
 
-      ///裁切框高亮
+      ///遮罩
       canvas.drawPath(
           Path()
             ..moveTo(0, 0)
@@ -577,17 +667,19 @@ class CropperImageRender extends RenderProxyBox {
 
 
         //两点的距离
-        var distance = sqrt(pow(right! - left!, 2) + pow(bottom! - top!, 2));
+        var distance = sqrt(pow(right! - left!, 2) + pow(bottom! - top!, 2));//对角线长度
         //var distance = cos(rotate1.abs() * 180 / (pi)) * (right! - left!);
-        var w_ = _image!.width < _image!.height ? _image!.width : _image!.height;
+        var w_ = _image!.width < _image!.height ? _image!.width : _image!.height ;//图片窄边长度
         var s_ = distance / w_;
+
+        print(",distance:$distance,w_:$w_,s_:$s_,scale:$scale");
 
         //最小倍数
         if(scale < s_) {
           scale = s_;
         }
-
-        //最大倍数
+        //
+        // //最大倍数
         if (5 < scale) {
           scale = 5;
         }
@@ -608,27 +700,27 @@ class CropperImageRender extends RenderProxyBox {
         //判断点是否在图片上
         //todo 需要优化 2022-06-06
 
-        var width = _image!.width * scale / 2;
-        if (left! < centerX! + drawX - width) {
-          drawX = left! - centerX! + width;
-        }
-        if (right! > centerX! + drawX + width) {
-          drawX = right! - centerX! - width;
-        }
-
-        var height = _image!.height * scale / 2;
-        if (top! < centerY! + drawY - height) {
-          drawY = top! - centerY! + height;
-        }
-        if (bottom! > centerY! + drawY + height) {
-          drawY = bottom! - centerY! - height;
-        }
+        // var width = _image!.width * scale / 2;
+        // if (left! < centerX! + drawX - width) {
+        //   drawX = left! - centerX! + width;
+        // }
+        // if (right! > centerX! + drawX + width) {
+        //   drawX = right! - centerX! - width;
+        // }
+        //
+        // var height = _image!.height * scale / 2;
+        // if (top! < centerY! + drawY - height) {
+        //   drawY = top! - centerY! + height;
+        // }
+        // if (bottom! > centerY! + drawY + height) {
+        //   drawY = bottom! - centerY! - height;
+        // }
 
       }
 
 
       //print("drawX:$drawX,drawY:$drawY,scale:$scale");
-      print("x:${centerX!+drawX},y:${centerY!+drawY},scale:$scale,rotate1:$rotate1");
+      //print("x:${centerX!+drawX},y:${centerY!+drawY},scale:$scale,rotate1:$rotate1");
     }
   }
 
